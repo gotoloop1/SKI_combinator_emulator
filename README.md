@@ -1,0 +1,2 @@
+# SKI_combinator_simulator
+SKIコンビネータの計算をチューリングマシンを用いて行うものです
