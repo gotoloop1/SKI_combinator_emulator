@@ -1,0 +1,500 @@
+
+# 現在の内部状態, ヘッドの指すテープの文字, テープに書き込む文字, ヘッドの次の移動方向, 次の内部状態
+
+# 計算の準備(テープの先頭に印をつける)
+q_0, S, S!, R, q_init1
+q_0, K, K!, R, q_init1
+q_0, (, (!, R, q_init1
+q_0, ), )!, R, q_init1
+q_0, X, X!, R, q_init1
+
+q_init1, ANY, NONE, R, q_init1
+q_init1, BLANK, BLANK, L, q_init4
+
+q_init3, BLANK, BLANK, L, q_init4
+
+q_init4, S, BLANK, R, q_init5S
+q_init4, K, BLANK, R, q_init5K
+q_init4, (, BLANK, R, q_init5(
+q_init4, ), BLANK, R, q_init5)
+q_init4, X, BLANK, R, q_init5X
+q_init4, S!, $, R, q_init6S
+q_init4, K!, $, R, q_init6K
+q_init4, (!, $, R, q_init6(
+q_init4, )!, $, R, q_init6)
+q_init4, X!, $, R, q_init6X
+
+q_init5S, BLANK, S, L, q_init3
+q_init5K, BLANK, K, L, q_init3
+q_init5(, BLANK, (, L, q_init3
+q_init5), BLANK, ), L, q_init3
+q_init5X, BLANK, X, L, q_init3
+
+q_init6S, BLANK, S, L, q_main
+q_init6K, BLANK, K, L, q_main
+q_init6(, BLANK, (, L, q_main
+q_init6), BLANK, ), L, q_main
+q_init6C, BLANK, X, L, q_main
+
+# メインループ(簡約ができる限り回り続ける)
+q_main, $, $, R, q_remove
+q_main, ANY, NONE, L, q_main
+q_main, BLANK, BLANK, L, q_main
+
+# 不要な括弧の削除
+q_remove, ), #, L, q_remove_find1
+q_remove, ANY, NONE, R, q_remove
+q_remove, BLANK, BLANK, L, q_remove_end
+
+q_remove_find1, (, (!, L, q_remove_find2
+q_remove_find1, ANY, NONE, L, q_remove_find1
+
+q_remove_find2, (, NONE, R, q_remove_move3
+q_remove_find2, $, NONE, R, q_remove_move3
+q_remove_find2, ANY, NONE, R, q_remove_fill
+
+q_remove_move1, S, NONE, L, q_remove_move2S
+q_remove_move1, K, NONE, L, q_remove_move2K
+q_remove_move1, (, NONE, L, q_remove_move2(
+q_remove_move1, ), NONE, L, q_remove_move2)
+q_remove_move1, X, NONE, L, q_remove_move2X
+q_remove_move1, (!, NONE, L, q_remove_move2(!
+q_remove_move1, )!, NONE, L, q_remove_move2)!
+q_remove_move1, #, NONE, L, q_remove_move2#
+q_remove_move1, BLANK, BLANK, L, q_remove_move4
+
+q_remove_move2S, ANY, S, R, q_remove_move3
+q_remove_move2K, ANY, K, R, q_remove_move3
+q_remove_move2(, ANY, (, R, q_remove_move3
+q_remove_move2), ANY, ), R, q_remove_move3
+q_remove_move2X, ANY, X, R, q_remove_move3
+q_remove_move2(!, ANY, (!, R, q_remove_move3
+q_remove_move2)!, ANY, )!, R, q_remove_move3
+q_remove_move2#, ANY, #, R, q_remove_move3
+
+q_remove_move3, ANY, NONE, R, q_remove_move1
+
+q_remove_move4, #, NONE, R, q_remove_move5
+q_remove_move4, ANY, NONE, L, q_remove_move4
+
+q_remove_move5, S, NONE, L, q_remove_move6S
+q_remove_move5, K, NONE, L, q_remove_move6K
+q_remove_move5, (, NONE, L, q_remove_move6(
+q_remove_move5, ), NONE, L, q_remove_move6)
+q_remove_move5, X, NONE, L, q_remove_move6X
+q_remove_move5, #, NONE, L, q_remove_move6)
+q_remove_move5, BLANK, BLANK, L, q_remove_move8
+
+q_remove_move6S, ANY, S, R, q_remove_move7
+q_remove_move6K, ANY, K, R, q_remove_move7
+q_remove_move6(, ANY, (, R, q_remove_move7
+q_remove_move6), ANY, ), R, q_remove_move7
+q_remove_move6X, ANY, X, R, q_remove_move7
+
+q_remove_move7, ANY, NONE, R, q_remove_move5
+
+q_remove_move8, ANY, BLANK, L, q_remove_move9
+
+q_remove_move9, ANY, BLANK, L, q_remove_move10
+
+q_remove_move10, )!, NONE, R, q_remove
+q_remove_move10, $, NONE, R, q_remove
+q_remove_move10, ANY, NONE, L, q_remove_move10
+
+q_remove_fill, #, )!, R, q_remove
+q_remove_fill, ANY, NONE, R, q_remove_fill
+
+q_remove_end, (!, (, L, q_remove_end
+q_remove_end, )!, ), L, q_remove_end
+q_remove_end, $, NONE, R, q_reduction
+q_remove_end, ANY, NONE, L, q_remove_end
+
+# SKコンビネータの簡約(簡約できる場所を探す)
+q_reduction, S, #, R, q_reduction_Stest1
+q_reduction, K, #, R, q_reduction_Ktest1
+q_reduction, ANY, NONE, R, q_reduction_find
+
+q_reduction_find, (, NONE, R, q_reduction
+q_reduction_find, ANY, NONE, R, q_reduction_find
+q_reduction_find, BLANK, BLANK, L, q_end_1
+
+# Sコンビネータが簡約できるか調べる
+q_reduction_Stest1, S, S!, R, q_reduction_Stest2
+q_reduction_Stest1, K, K!, R, q_reduction_Stest2
+q_reduction_Stest1, X, X!, R, q_reduction_Stest2
+q_reduction_Stest1, (, (!, R, q_reduction_Stest1_fill1
+q_reduction_Stest1, ), NONE, L, q_reduction_Sfail
+q_reduction_Stest1, BLANK, BLANK, L, q_reduction_Sfail
+
+q_reduction_Stest1_fill1, ), )!, L, q_reduction_Stest1_fill2
+q_reduction_Stest1_fill1, ANY, NONE, R, q_reduction_Stest1_fill1
+
+q_reduction_Stest1_fill2, (, (&, R, q_reduction_Stest1_fill3
+q_reduction_Stest1_fill2, (!, NONE, R, q_reduction_Stest1_fill4
+q_reduction_Stest1_fill2, ANY, NONE, L, q_reduction_Stest1_fill2
+
+q_reduction_Stest1_fill3, )!, )&, R, q_reduction_Stest1_fill1
+q_reduction_Stest1_fill3, ANY, NONE, R, q_reduction_Stest1_fill3
+
+q_reduction_Stest1_fill4, )!, NONE, R, q_reduction_Stest2
+q_reduction_Stest1_fill4, ANY, NONE, R, q_reduction_Stest1_fill4
+
+q_reduction_Stest2, S, S!, R, q_reduction_Stest3
+q_reduction_Stest2, K, K!, R, q_reduction_Stest3
+q_reduction_Stest2, X, X!, R, q_reduction_Stest3
+q_reduction_Stest2, (, (!, R, q_reduction_Stest2_fill1
+q_reduction_Stest2, ), NONE, L, q_reduction_Sfail
+q_reduction_Stest2, BLANK, BLANK, L, q_reduction_Sfail
+
+q_reduction_Stest2_fill1, ), )!, L, q_reduction_Stest2_fill2
+q_reduction_Stest2_fill1, ANY, NONE, R, q_reduction_Stest2_fill1
+
+q_reduction_Stest2_fill2, (, (&, R, q_reduction_Stest2_fill3
+q_reduction_Stest2_fill2, (!, NONE, R, q_reduction_Stest2_fill4
+q_reduction_Stest2_fill2, ANY, NONE, L, q_reduction_Stest2_fill2
+
+q_reduction_Stest2_fill3, )!, )&, R, q_reduction_Stest2_fill1
+q_reduction_Stest2_fill3, ANY, NONE, R, q_reduction_Stest2_fill3
+
+q_reduction_Stest2_fill4, )!, NONE, R, q_reduction_Stest3
+q_reduction_Stest2_fill4, ANY, NONE, R, q_reduction_Stest2_fill4
+
+q_reduction_Stest3, S, S!, L, q_reduction_Smove_1
+q_reduction_Stest3, K, K!, L, q_reduction_Smove_1
+q_reduction_Stest3, X, X!, L, q_reduction_Smove_1
+q_reduction_Stest3, (, (!, R, q_reduction_Stest3_fill1
+q_reduction_Stest3, ), NONE, L, q_reduction_Sfail
+q_reduction_Stest3, BLANK, BLANK, L, q_reduction_Sfail
+
+q_reduction_Stest3_fill1, ), )!, L, q_reduction_Stest3_fill2
+q_reduction_Stest3_fill1, ANY, NONE, R, q_reduction_Stest3_fill1
+
+q_reduction_Stest3_fill2, (, (&, R, q_reduction_Stest3_fill3
+q_reduction_Stest3_fill2, (!, NONE, R, q_reduction_Stest3_fill4
+q_reduction_Stest3_fill2, ANY, NONE, L, q_reduction_Stest3_fill2
+
+q_reduction_Stest3_fill3, )!, )&, R, q_reduction_Stest3_fill1
+q_reduction_Stest3_fill3, ANY, NONE, R, q_reduction_Stest3_fill3
+
+q_reduction_Stest3_fill4, )!, NONE, L, q_reduction_Smove_1
+q_reduction_Stest3_fill4, ANY, NONE, R, q_reduction_Stest3_fill4
+
+# Sコンビネータを実際に簡約する
+q_reduction_Smove_1, #, NONE, R, q_reduction_Smove_2
+q_reduction_Smove_1, (&, (, L, q_reduction_Smove_1
+q_reduction_Smove_1, )&, ), L, q_reduction_Smove_1
+q_reduction_Smove_1, ANY, NONE, L, q_reduction_Smove_1
+
+q_reduction_Smove_2, S, NONE, L, q_reduction_Smove_3S
+q_reduction_Smove_2, K, NONE, L, q_reduction_Smove_3K
+q_reduction_Smove_2, X, NONE, L, q_reduction_Smove_3X
+q_reduction_Smove_2, (, NONE, L, q_reduction_Smove_3(
+q_reduction_Smove_2, ), NONE, L, q_reduction_Smove_3)
+q_reduction_Smove_2, (!, NONE, L, q_reduction_Smove_3(
+q_reduction_Smove_2, S!, #, L, q_reduction_Smove_5S
+q_reduction_Smove_2, K!, #, L, q_reduction_Smove_5K
+q_reduction_Smove_2, X!, #, L, q_reduction_Smove_5X
+q_reduction_Smove_2, )!, #, L, q_reduction_Smove_5)
+
+q_reduction_Smove_3S, ANY, S, R, q_reduction_Smove_4
+q_reduction_Smove_3K, ANY, K, R, q_reduction_Smove_4
+q_reduction_Smove_3X, ANY, X, R, q_reduction_Smove_4
+q_reduction_Smove_3(, ANY, (, R, q_reduction_Smove_4
+q_reduction_Smove_3), ANY, ), R, q_reduction_Smove_4
+
+q_reduction_Smove_4, ANY, NONE, R, q_reduction_Smove_2
+
+q_reduction_Smove_5S, ANY, S, R, q_reduction_Smove_6
+q_reduction_Smove_5K, ANY, K, R, q_reduction_Smove_6
+q_reduction_Smove_5X, ANY, X, R, q_reduction_Smove_6
+q_reduction_Smove_5), ANY, ), R, q_reduction_Smove_6
+
+q_reduction_Smove_6, ANY, NONE, R, q_reduction_Smove_6
+q_reduction_Smove_6, BLANK, BLANK, L, q_reduction_Smove_7
+
+q_reduction_Smove_7, S, BLANK, R, q_reduction_Smove_8S
+q_reduction_Smove_7, K, BLANK, R, q_reduction_Smove_8K
+q_reduction_Smove_7, X, BLANK, R, q_reduction_Smove_8X
+q_reduction_Smove_7, (, BLANK, R, q_reduction_Smove_8(
+q_reduction_Smove_7, ), BLANK, R, q_reduction_Smove_8)
+q_reduction_Smove_7, S!, S!*, R, q_reduction_Smove_10
+q_reduction_Smove_7, K!, K!*, R, q_reduction_Smove_10
+q_reduction_Smove_7, X!, X!*, R, q_reduction_Smove_10
+q_reduction_Smove_7, )!, )!*, R, q_reduction_Smove_10
+
+q_reduction_Smove_8S, BLANK, S, L, q_reduction_Smove_9
+q_reduction_Smove_8K, BLANK, K, L, q_reduction_Smove_9
+q_reduction_Smove_8X, BLANK, X, L, q_reduction_Smove_9
+q_reduction_Smove_8(, BLANK, (, L, q_reduction_Smove_9
+q_reduction_Smove_8), BLANK, ), L, q_reduction_Smove_9
+
+q_reduction_Smove_9, BLANK, BLANK, L, q_reduction_Smove_7
+
+q_reduction_Smove_10, BLANK, ), R, q_reduction_Smove_11
+
+q_reduction_Smove_11, ANY, NONE, R, q_reduction_Smove_11
+q_reduction_Smove_11, BLANK, BLANK, L, q_reduction_Smove_12
+
+q_reduction_Smove_12, S, BLANK, R, q_reduction_Smove_13S
+q_reduction_Smove_12, K, BLANK, R, q_reduction_Smove_13K
+q_reduction_Smove_12, X, BLANK, R, q_reduction_Smove_13X
+q_reduction_Smove_12, (, BLANK, R, q_reduction_Smove_13(
+q_reduction_Smove_12, ), BLANK, R, q_reduction_Smove_13)
+q_reduction_Smove_12, S!, BLANK, R, q_reduction_Smove_13S!
+q_reduction_Smove_12, K!, BLANK, R, q_reduction_Smove_13K!
+q_reduction_Smove_12, X!, BLANK, R, q_reduction_Smove_13X!
+q_reduction_Smove_12, (!, BLANK, R, q_reduction_Smove_13(!
+q_reduction_Smove_12, )!, BLANK, R, q_reduction_Smove_13)!
+q_reduction_Smove_12, S*, BLANK, R, q_reduction_Smove_13S*
+q_reduction_Smove_12, K*, BLANK, R, q_reduction_Smove_13K*
+q_reduction_Smove_12, X*, BLANK, R, q_reduction_Smove_13X*
+q_reduction_Smove_12, (*, BLANK, R, q_reduction_Smove_13(*
+q_reduction_Smove_12, )*, BLANK, R, q_reduction_Smove_13)*
+q_reduction_Smove_12, S!*, BLANK, R, q_reduction_Smove_13S!*
+q_reduction_Smove_12, K!*, BLANK, R, q_reduction_Smove_13K!*
+q_reduction_Smove_12, X!*, BLANK, R, q_reduction_Smove_13X!*
+q_reduction_Smove_12, (!*, BLANK, R, q_reduction_Smove_13(!*
+q_reduction_Smove_12, )!*, BLANK, R, q_reduction_Smove_13)!*
+q_reduction_Smove_12, #, NONE, R, q_reduction_Smove_15
+
+q_reduction_Smove_13S, BLANK, S, L, q_reduction_Smove_14
+q_reduction_Smove_13K, BLANK, K, L, q_reduction_Smove_14
+q_reduction_Smove_13X, BLANK, X, L, q_reduction_Smove_14
+q_reduction_Smove_13(, BLANK, (, L, q_reduction_Smove_14
+q_reduction_Smove_13), BLANK, ), L, q_reduction_Smove_14
+q_reduction_Smove_13S!, BLANK, S!, L, q_reduction_Smove_14
+q_reduction_Smove_13K!, BLANK, K!, L, q_reduction_Smove_14
+q_reduction_Smove_13X!, BLANK, X!, L, q_reduction_Smove_14
+q_reduction_Smove_13(!, BLANK, (!, L, q_reduction_Smove_14
+q_reduction_Smove_13)!, BLANK, )!, L, q_reduction_Smove_14
+q_reduction_Smove_13S*, BLANK, S*, L, q_reduction_Smove_14
+q_reduction_Smove_13K*, BLANK, K*, L, q_reduction_Smove_14
+q_reduction_Smove_13X*, BLANK, X*, L, q_reduction_Smove_14
+q_reduction_Smove_13(*, BLANK, (*, L, q_reduction_Smove_14
+q_reduction_Smove_13)*, BLANK, )*, L, q_reduction_Smove_14
+q_reduction_Smove_13S!*, BLANK, S!*, L, q_reduction_Smove_14
+q_reduction_Smove_13K!*, BLANK, K!*, L, q_reduction_Smove_14
+q_reduction_Smove_13X!*, BLANK, X!*, L, q_reduction_Smove_14
+q_reduction_Smove_13(!*, BLANK, (!*, L, q_reduction_Smove_14
+q_reduction_Smove_13)!*, BLANK, )!*, L, q_reduction_Smove_14
+
+q_reduction_Smove_14, BLANK, BLANK, L, q_reduction_Smove_12
+
+q_reduction_Smove_15, S*, NONE, L, q_reduction_Smove_16S
+q_reduction_Smove_15, K*, NONE, L, q_reduction_Smove_16K
+q_reduction_Smove_15, X*, NONE, L, q_reduction_Smove_16X
+q_reduction_Smove_15, (*, NONE, L, q_reduction_Smove_16(
+q_reduction_Smove_15, )*, NONE, L, q_reduction_Smove_16)
+q_reduction_Smove_15, S!*, NONE, L, q_reduction_Smove_16S
+q_reduction_Smove_15, K!*, NONE, L, q_reduction_Smove_16K
+q_reduction_Smove_15, X!*, NONE, L, q_reduction_Smove_16X
+q_reduction_Smove_15, (!*, NONE, L, q_reduction_Smove_16(
+q_reduction_Smove_15, )!*, NONE, L, q_reduction_Smove_16)
+q_reduction_Smove_15, ANY, NONE, R, q_reduction_Smove_15
+q_reduction_Smove_15, BLANK, &, R, q_reduction_Smove_15
+
+q_reduction_Smove_16S, &, S, R, q_reduction_Smove_18
+q_reduction_Smove_16S, ANY, NONE, L, q_reduction_Smove_16S
+q_reduction_Smove_16K, &, K, R, q_reduction_Smove_18
+q_reduction_Smove_16K, ANY, NONE, L, q_reduction_Smove_16K
+q_reduction_Smove_16X, &, X, R, q_reduction_Smove_18
+q_reduction_Smove_16X, ANY, NONE, L, q_reduction_Smove_16X
+q_reduction_Smove_16(, &, (, R, q_reduction_Smove_18
+q_reduction_Smove_16(, ANY, NONE, L, q_reduction_Smove_16(
+q_reduction_Smove_16), &, ), R, q_reduction_Smove_18
+q_reduction_Smove_16), ANY, NONE, L, q_reduction_Smove_16)
+
+q_reduction_Smove_18, S*, S, L, q_reduction_Smove_19
+q_reduction_Smove_18, K*, K, L, q_reduction_Smove_19
+q_reduction_Smove_18, X*, X, L, q_reduction_Smove_19
+q_reduction_Smove_18, (*, (, L, q_reduction_Smove_19
+q_reduction_Smove_18, )*, ), L, q_reduction_Smove_19
+q_reduction_Smove_18, )!*, ), L, q_reduction_Smove_19
+q_reduction_Smove_18, S!*, S, L, q_reduction_Smove_20
+q_reduction_Smove_18, K!*, K, L, q_reduction_Smove_20
+q_reduction_Smove_18, X!*, X, L, q_reduction_Smove_20
+q_reduction_Smove_18, (!*, (, L, q_reduction_Smove_20
+q_reduction_Smove_18, ANY, NONE, R, q_reduction_Smove_18
+
+q_reduction_Smove_19, S, S*, R, q_reduction_Smove_11
+q_reduction_Smove_19, K, K*, R, q_reduction_Smove_11
+q_reduction_Smove_19, X, X*, R, q_reduction_Smove_11
+q_reduction_Smove_19, (, (*, R, q_reduction_Smove_11
+q_reduction_Smove_19, ), )*, R, q_reduction_Smove_11
+q_reduction_Smove_19, (!, (!*, R, q_reduction_Smove_11
+
+q_reduction_Smove_20, )!, ), L, q_reduction_Smove_20
+q_reduction_Smove_20, #, NONE, R, q_reduction_Smove_21
+q_reduction_Smove_20, ANY, NONE, L, q_reduction_Smove_20
+
+q_reduction_Smove_21, S, NONE, L, q_reduction_Smove_22S
+q_reduction_Smove_21, K, NONE, L, q_reduction_Smove_22K
+q_reduction_Smove_21, X, NONE, L, q_reduction_Smove_22X
+q_reduction_Smove_21, (, NONE, L, q_reduction_Smove_22(
+q_reduction_Smove_21, ), NONE, L, q_reduction_Smove_22)
+q_reduction_Smove_21, S!, S, L, q_reduction_Smove_24
+q_reduction_Smove_21, K!, K, L, q_reduction_Smove_24
+q_reduction_Smove_21, X!, X, L, q_reduction_Smove_24
+q_reduction_Smove_21, (!, (, L, q_reduction_Smove_24
+
+q_reduction_Smove_22S, ANY, S, R, q_reduction_Smove_23
+q_reduction_Smove_22K, ANY, K, R, q_reduction_Smove_23
+q_reduction_Smove_22X, ANY, X, R, q_reduction_Smove_23
+q_reduction_Smove_22(, ANY, (, R, q_reduction_Smove_23
+q_reduction_Smove_22), ANY, ), R, q_reduction_Smove_23
+
+q_reduction_Smove_23, ANY, NONE, R, q_reduction_Smove_21
+
+q_reduction_Smove_24, ANY, (, L, q_main
+
+# Kコンビネータが簡約できるか調べる
+q_reduction_Ktest1, S, S!, R, q_reduction_Ktest2
+q_reduction_Ktest1, K, K!, R, q_reduction_Ktest2
+q_reduction_Ktest1, X, X!, R, q_reduction_Ktest2
+q_reduction_Ktest1, (, (!, R, q_reduction_Ktest1_fill1
+q_reduction_Ktest1, ), NONE, L, q_reduction_Kfail
+q_reduction_Ktest1, BLANK, BLANK, L, q_reduction_Kfail
+
+q_reduction_Ktest1_fill1, ), )!, L, q_reduction_Ktest1_fill2
+q_reduction_Ktest1_fill1, ANY, NONE, R, q_reduction_Ktest1_fill1
+
+q_reduction_Ktest1_fill2, (, (&, R, q_reduction_Ktest1_fill3
+q_reduction_Ktest1_fill2, (!, NONE, R, q_reduction_Ktest1_fill4
+q_reduction_Ktest1_fill2, ANY, NONE, L, q_reduction_Ktest1_fill2
+
+q_reduction_Ktest1_fill3, )!, )&, R, q_reduction_Ktest1_fill1
+q_reduction_Ktest1_fill3, ANY, NONE, R, q_reduction_Ktest1_fill3
+
+q_reduction_Ktest1_fill4, )!, NONE, R, q_reduction_Ktest2
+q_reduction_Ktest1_fill4, ANY, NONE, R, q_reduction_Ktest1_fill4
+
+q_reduction_Ktest2, S, S!, L, q_reduction_Kmove_1
+q_reduction_Ktest2, K, K!, L, q_reduction_Kmove_1
+q_reduction_Ktest2, X, X!, L, q_reduction_Kmove_1
+q_reduction_Ktest2, (, (!, R, q_reduction_Ktest2_fill1
+q_reduction_Ktest2, ), NONE, L, q_reduction_Kfail
+q_reduction_Ktest2, BLANK, BLANK, L, q_reduction_Kfail
+
+q_reduction_Ktest2_fill1, ), )!, L, q_reduction_Ktest2_fill2
+q_reduction_Ktest2_fill1, ANY, NONE, R, q_reduction_Ktest2_fill1
+
+q_reduction_Ktest2_fill2, (, (&, R, q_reduction_Ktest2_fill3
+q_reduction_Ktest2_fill2, (!, NONE, R, q_reduction_Ktest2_fill4
+q_reduction_Ktest2_fill2, ANY, NONE, L, q_reduction_Ktest2_fill2
+
+q_reduction_Ktest2_fill3, )!, )&, R, q_reduction_Ktest2_fill1
+q_reduction_Ktest2_fill3, ANY, NONE, R, q_reduction_Ktest2_fill3
+
+q_reduction_Ktest2_fill4, )!, NONE, L, q_reduction_Kmove_1
+q_reduction_Ktest2_fill4, ANY, NONE, R, q_reduction_Ktest2_fill4
+
+# Kコンビネータを実際に簡約する
+q_reduction_Kmove_1, #, NONE, R, q_reduction_Kmove_2
+q_reduction_Kmove_1, (&, (, L, q_reduction_Kmove_1
+q_reduction_Kmove_1, )&, ), L, q_reduction_Kmove_1
+q_reduction_Kmove_1, ANY, NONE, L, q_reduction_Kmove_1
+
+q_reduction_Kmove_2, S, NONE, L, q_reduction_Kmove_3S
+q_reduction_Kmove_2, K, NONE, L, q_reduction_Kmove_3K
+q_reduction_Kmove_2, X, NONE, L, q_reduction_Kmove_3X
+q_reduction_Kmove_2, (, NONE, L, q_reduction_Kmove_3(
+q_reduction_Kmove_2, ), NONE, L, q_reduction_Kmove_3)
+q_reduction_Kmove_2, (!, NONE, L, q_reduction_Kmove_3(
+q_reduction_Kmove_2, S!, BLANK, L, q_reduction_Kmove_5S
+q_reduction_Kmove_2, K!, BLANK, L, q_reduction_Kmove_5K
+q_reduction_Kmove_2, X!, BLANK, L, q_reduction_Kmove_5X
+q_reduction_Kmove_2, )!, BLANK, L, q_reduction_Kmove_5)
+
+q_reduction_Kmove_3S, ANY, S, R, q_reduction_Kmove_4
+q_reduction_Kmove_3K, ANY, K, R, q_reduction_Kmove_4
+q_reduction_Kmove_3X, ANY, X, R, q_reduction_Kmove_4
+q_reduction_Kmove_3(, ANY, (, R, q_reduction_Kmove_4
+q_reduction_Kmove_3), ANY, ), R, q_reduction_Kmove_4
+
+q_reduction_Kmove_4, ANY, NONE, R, q_reduction_Kmove_2
+
+q_reduction_Kmove_5S, ANY, S, R, q_reduction_Kmove_6
+q_reduction_Kmove_5K, ANY, K, R, q_reduction_Kmove_6
+q_reduction_Kmove_5X, ANY, X, R, q_reduction_Kmove_6
+q_reduction_Kmove_5), ANY, ), R, q_reduction_Kmove_6
+
+q_reduction_Kmove_6, S!, BLANK, R, q_reduction_Kmove_7
+q_reduction_Kmove_6, K!, BLANK, R, q_reduction_Kmove_7
+q_reduction_Kmove_6, X!, BLANK, R, q_reduction_Kmove_7
+q_reduction_Kmove_6, )!, BLANK, R, q_reduction_Kmove_7
+q_reduction_Kmove_6, ANY, BLANK, R, q_reduction_Kmove_6
+q_reduction_Kmove_6, BLANK, BLANK, R, q_reduction_Kmove_6
+
+q_reduction_Kmove_7, S, #, L, q_reduction_Kmove_8S
+q_reduction_Kmove_7, K, #, L, q_reduction_Kmove_8K
+q_reduction_Kmove_7, X, #, L, q_reduction_Kmove_8X
+q_reduction_Kmove_7, (, #, L, q_reduction_Kmove_8(
+q_reduction_Kmove_7, ), #, L, q_reduction_Kmove_8)
+q_reduction_Kmove_7, S!, #, L, q_reduction_Kmove_8S
+q_reduction_Kmove_7, K!, #, L, q_reduction_Kmove_8K
+q_reduction_Kmove_7, X!, #, L, q_reduction_Kmove_8X
+q_reduction_Kmove_7, (!, #, L, q_reduction_Kmove_8(
+q_reduction_Kmove_7, )!, #, L, q_reduction_Kmove_8)
+q_reduction_Kmove_7, BLANK, BLANK, L, q_main
+
+q_reduction_Kmove_8S, ANY, NONE, R, q_reduction_Kmove_9S
+q_reduction_Kmove_8S, BLANK, BLANK, L, q_reduction_Kmove_8S
+q_reduction_Kmove_8K, ANY, NONE, R, q_reduction_Kmove_9K
+q_reduction_Kmove_8K, BLANK, BLANK, L, q_reduction_Kmove_8K
+q_reduction_Kmove_8X, ANY, NONE, R, q_reduction_Kmove_9X
+q_reduction_Kmove_8X, BLANK, BLANK, L, q_reduction_Kmove_8X
+q_reduction_Kmove_8(, ANY, NONE, R, q_reduction_Kmove_9(
+q_reduction_Kmove_8(, BLANK, BLANK, L, q_reduction_Kmove_8(
+q_reduction_Kmove_8), ANY, NONE, R, q_reduction_Kmove_9)
+q_reduction_Kmove_8), BLANK, BLANK, L, q_reduction_Kmove_8)
+
+q_reduction_Kmove_9S, BLANK, S, R, q_reduction_Kmove_10
+q_reduction_Kmove_9K, BLANK, K, R, q_reduction_Kmove_10
+q_reduction_Kmove_9X, BLANK, X, R, q_reduction_Kmove_10
+q_reduction_Kmove_9(, BLANK, (, R, q_reduction_Kmove_10
+q_reduction_Kmove_9), BLANK, ), R, q_reduction_Kmove_10
+
+q_reduction_Kmove_10, #, BLANK, R, q_reduction_Kmove_7
+q_reduction_Kmove_10, BLANK, BLANK, R, q_reduction_Kmove_10
+
+# コンビネータの簡約に失敗した時の後処理
+q_reduction_Sfail, #, S, R, q_reduction_find
+q_reduction_Sfail, S!, S, L, q_reduction_Sfail
+q_reduction_Sfail, K!, K, L, q_reduction_Sfail
+q_reduction_Sfail, X!, X, L, q_reduction_Sfail
+q_reduction_Sfail, (!, (, L, q_reduction_Sfail
+q_reduction_Sfail, )!, ), L, q_reduction_Sfail
+q_reduction_Sfail, (&, (, L, q_reduction_Sfail
+q_reduction_Sfail, )&, ), L, q_reduction_Sfail
+q_reduction_Sfail, ANY, NONE, L, q_reduction_Sfail
+
+q_reduction_Kfail, #, S, R, q_reduction_find
+q_reduction_Kfail, S!, S, L, q_reduction_Kfail
+q_reduction_Kfail, K!, K, L, q_reduction_Kfail
+q_reduction_Kfail, X!, X, L, q_reduction_Kfail
+q_reduction_Kfail, (!, (, L, q_reduction_Kfail
+q_reduction_Kfail, )!, ), L, q_reduction_Kfail
+q_reduction_Kfail, (&, (, L, q_reduction_Kfail
+q_reduction_Kfail, )&, ), L, q_reduction_Kfail
+q_reduction_Kfail, ANY, NONE, L, q_reduction_Kfail
+
+# 計算の後処理(テープの先頭の印をなくす)
+q_end_1, $, NONE, R, q_end_2
+q_end_1, ANY, NONE, L, q_end_1
+
+q_end_2, S, NONE, L, q_end_3S
+q_end_2, K, NONE, L, q_end_3K
+q_end_2, X, NONE, L, q_end_3X
+q_end_2, (, NONE, L, q_end_3(
+q_end_2, ), NONE, L, q_end_3)
+q_end_2, BLANK, BLANK, L, q_end_5
+
+q_end_3S, ANY, S, R, q_end_4
+q_end_3K, ANY, K, R, q_end_4
+q_end_3X, ANY, X, R, q_end_4
+q_end_3(, ANY, (, R, q_end_4
+q_end_3), ANY, ), R, q_end_4
+
+q_end_4, ANY, NONE, R, q_end_2
+
+q_end_5, ANY, BLANK, R, q_accept
